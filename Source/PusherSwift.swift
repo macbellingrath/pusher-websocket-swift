@@ -16,11 +16,32 @@ public typealias PusherUserData = PresenceChannelMember
 
 let PROTOCOL = 7
 let VERSION = "0.3.0"
-let CLIENT_NAME = "pusher-websocket-swift"
+let CLIENT_NAME = "weddingwire.pusher.ios"
 
 public class Pusher {
     public let connection: PusherConnection
 
+    public var stateChangeDelegate: ConnectionStateChangeDelegate? {
+        get {
+            return connection.stateChangeDelegate
+        }
+        
+        set {
+            connection.stateChangeDelegate = newValue
+        }
+    }
+    
+    public var connectionDelegate: ConnectionDelegate? {
+        get {
+            return connection.connectionDelegate
+        }
+        
+        set {
+            connection.connectionDelegate = newValue
+        }
+    }
+
+    
     public init(key: String, options: Dictionary<String, Any>? = nil) {
         let pusherClientOptions = PusherClientOptions(options: options)
         let urlString = constructUrl(key, options: pusherClientOptions)
@@ -169,6 +190,7 @@ public class PusherConnection: WebSocketDelegate {
     public var socket: WebSocket!
     public var URLSession: NSURLSession
     public weak var stateChangeDelegate: ConnectionStateChangeDelegate?
+    public weak var connectionDelegate: ConnectionDelegate?
 
     public lazy var reachability: Reachability? = {
         let reachability = try? Reachability.reachabilityForInternetConnection()
@@ -554,6 +576,8 @@ public class PusherConnection: WebSocketDelegate {
     // MARK: WebSocketDelegate Implementation
 
     public func websocketDidReceiveMessage(ws: WebSocket, text: String) {
+        self.connectionDelegate?.connectionDidReceiveMessage(text)
+        
         if let pusherPayloadObject = getPusherEventJSONFromString(text), eventName = pusherPayloadObject["event"] as? String {
             self.handleEvent(eventName, jsonObject: pusherPayloadObject)
         } else {
@@ -562,6 +586,8 @@ public class PusherConnection: WebSocketDelegate {
     }
 
     public func websocketDidDisconnect(ws: WebSocket, error: NSError?) {
+        self.connectionDelegate?.connectionDidDisconnect(error)
+        
         if let error = error {
             print("Websocket is disconnected: \(error.localizedDescription)")
         }
@@ -578,6 +604,11 @@ public class PusherConnection: WebSocketDelegate {
 
 public protocol ConnectionStateChangeDelegate: class {
     func connectionChange(old: ConnectionState, new: ConnectionState)
+}
+
+public protocol ConnectionDelegate: class {
+    func connectionDidReceiveMessage(text:String)
+    func connectionDidDisconnect(error:NSError?)
 }
 
 public struct EventHandler {
