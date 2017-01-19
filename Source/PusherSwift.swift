@@ -9,7 +9,7 @@ import Foundation
 
 let PROTOCOL = 7
 let VERSION = "4.0.1"
-let CLIENT_NAME = "pusher-websocket-swift"
+let CLIENT_NAME = "weddingwire.pusher.ios"
 
 @objc open class Pusher: NSObject {
     open let connection: PusherConnection
